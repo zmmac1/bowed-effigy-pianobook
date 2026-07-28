@@ -1,0 +1,582 @@
+{------- created by Justin Trieger with guidance from Owen Bolig -------}
+
+{last updated on Monday, May 4, 2025 at 10:00}
+
+
+on init
+
+    message("Memory or Dream?")
+    set_script_title("Burned Effigy")
+    make_perfview
+    set_ui_height_px(532)
+    set_ui_width_px(820)
+    set_control_par_str($INST_WALLPAPER_ID,$CONTROL_PAR_PICTURE,"Background Final")
+    set_control_par_str($INST_ICON_ID,$CONTROL_PAR_PICTURE,"icon")
+
+    {---Animation Variables--}
+    
+    declare $is_ani_active := 0
+    declare $is_rel_active
+    declare $ani_frame
+    declare $note_counter := 0
+    declare $loop_start := 0
+    declare $frame_rate := 1000000 / 25 {this is 10 frames per second. change 10 to whatever fps you want}
+    declare const $MAX_FRAMES := 350 {whatever the number of frames is}
+    declare ui_label $lbl_ani (1,1)
+    declare $lbl_ani_id := get_ui_id($lbl_ani)
+
+    move_control_px($lbl_ani, 110, 242)
+    set_control_par($lbl_ani_id, $CONTROL_PAR_WIDTH, 600)
+    set_control_par($lbl_ani_id, $CONTROL_PAR_HEIGHT, 114)
+    set_control_par_str($lbl_ani_id, $CONTROL_PAR_PICTURE, "Strings 3")
+    set_control_par($lbl_ani_id, $CONTROL_PAR_MOUSE_BEHAVIOUR, -1)
+    set_text($lbl_ani, "") 
+    set_control_par($lbl_ani_id, $CONTROL_PAR_PICTURE_STATE, 0)
+
+    {---GLOBAL VARIABLES---}
+
+    declare $i
+    declare $m
+    declare $s
+    declare $crossfade
+    declare $legato
+    declare $sustain
+    declare %vol_ep[1018] := ( 0, 0, 0, 0, 29240, 29240, 29240, 29240, 36840, 36840, 42172, 42172, 46416, 46416, 50000, 53133, 55934, 55934, 58480, 60822, 62996, 65030, 66943, 68753, 70473, 73681, 75185, 76631, 79370, 80671, 81932, 84343, 86624, 87721, 89835, 90856, 92832, 94727, 96549, 98305, 100000, 101640, 103228, 104769, 106266, 107722, 109139, 111199, 112531, 113832, 115729, 116961, 118760, 119931, 121644, 123311, 124397, 125992, 127548, 129066, 130550, 132001, 133420, 134810, 136172, 137507, 138817, 140525, 141780, 143013, 144625, 145810, 147361, 148504, 150000, 151103, 152549, 153968, 155362, 156391, 157742, 159070, 160377, 161662, 162928, 164174, 165706, 166911, 168099, 169270, 170712, 171848, 173248, 174351, 175711, 176784, 178108, 179412, 180441, 181712, 182965, 184201, 185422, 186626, 187814, 188988, 190148, 191293, 192425, 193766, 194869, 195961, 197254, 198319, 199582, 200623, 201858, 202875, 204083, 205276, 206260, 207429, 208585, 209727, 210858, 211977, 213084, 214179, 215264, 216337, 217577, 218628, 219669, 220700, 221891, 222902, 224070, 225062, 226208, 227180, 228305, 229419, 230522, 231459, 232543, 233616, 234680, 235735, 236780, 237816, 238843, 239861, 241014, 242014, 243006, 243990, 245105, 246072, 247168, 248119, 249197, 250133, 251194, 252246, 253160, 254196, 255223, 256243, 257254, 258258, 259129, 260241, 261222, 262195, 263162, 264121, 265073, 266136, 267074, 268005, 269046, 269963, 270989, 271893, 272904, 273796, 274793, 275673, 276657, 277633, 278603, 279566, 280522, 281367, 282415, 283249, 284284, 285209, 286128, 287041, 287948, 288850, 289845, 290735, 291620, 292597, 293470, 294434, 295297, 296250, 297196, 298043, 298978, 299907, 300739, 301658, 302570, 303478, 304380, 305277, 306169, 307055, 307936, 308813, 309684, 310551, 311498, 312355, 313206, 314054, 314980, 315818, 316651, 317563, 318387, 319289, 320185, 320996, 321883, 322766, 323564, 324437, 325305, 326169, 327029, 327884, 328657, 329580, 330422, 331259, 332093, 332922, 333747, 334568, 335384, 336271, 337080, 337885, 338758, 339555, 340420, 341210, 342066, 342848, 343697, 344471, 345312, 346079, 346912, 347741, 348566, 349318, 350136, 350950, 351760, 352566, 353369, 354168, 354963, 355755, 356543, 357329, 358110, 358953, 359727, 360498, 361266, 362094, 362855, 363613, 364431, 365182, 365993, 366738, 367542, 368280, 369077, 369810, 370600, 371387, 372111, 372892, 373669, 374444, 375156, 375924, 376689, 377451, 378209, 378965, 379718, 380468, 381215, 381959, 382700, 383438, 384174, 384906, 385692, 386419, 387143, 387865, 388639, 389355, 390068, 390833, 391541, 392301, 393003, 393703, 394455, 395203, 395896, 396639, 397326, 398063, 398798, 399479, 400208, 400935, 401660, 402330, 403049, 403767, 404481, 405193, 405902, 406558, 407263, 407965, 408665, 409362, 410057, 410750, 411440, 412178, 412863, 413546, 414227, 414906, 415583, 416306, 416978, 417648, 418315, 419028, 419692, 420353, 421059, 421716, 422371, 423071, 423722, 424417, 425063, 425754, 426397, 427083, 427722, 428404, 429084, 429717, 430393, 431066, 431693, 432363, 433031, 433652, 434316, 434977, 435637, 436251, 436907, 437560, 438212, 438862, 439510, 440114, 440758, 441400, 442041, 442680, 443317, 443952, 444585, 445217, 445847, 446475, 447101, 447725, 448348, 448969, 449629, 450247, 450862, 451477, 452089, 452700, 453309, 453916, 454563, 455167, 455769, 456370, 457009, 457607, 458203, 458838, 459431, 460022, 460651, 461239, 461826, 462451, 463034, 463617, 464236, 464815, 465432, 466008, 466583, 467195, 467767, 468375, 468944, 469550, 470116, 470719, 471282, 471882, 472442, 473039, 473597, 474191, 474746, 475337, 475889, 476477, 477027, 477613, 478160, 478742, 479323, 479867, 480445, 481022, 481562, 482136, 482673, 483245, 483815, 484348, 484916, 485482, 486012, 486576, 487139, 487665, 488225, 488749, 489306, 489862, 490417, 490937, 491489, 492040, 492556, 493105, 493653, 494165, 494711, 495255, 495798, 496306, 496847, 497386, 497891, 498428, 498965, 499466, 500000, 500533, 501031, 501562, 502091, 502587, 503114, 503640, 504132, 504656, 505179, 505701, 506190, 506710, 507228, 507714, 508230, 508746, 509229, 509742, 510255, 510766, 511245, 511755, 512232, 512739, 513246, 513720, 514225, 514728, 515200, 515702, 516203, 516671, 517170, 517637, 518134, 518631, 519095, 519589, 520083, 520544, 521036, 521496, 521986, 522444, 522932, 523389, 523875, 524330, 524815, 525268, 525751, 526203, 526684, 527134, 527614, 528062, 528540, 528987, 529463, 529908, 530353, 530827, 531270, 531742, 532184, 532625, 533094, 533534, 533973, 534440, 534877, 535314, 535779, 536214, 536648, 537111, 537544, 537976, 538407, 538867, 539297, 539727, 540155, 540583, 541011, 541438, 541864, 542317, 542742, 543166, 543589, 544012, 544434, 544856, 545276, 545696, 546116, 546535, 546953, 547370, 547787, 548203, 548591, 549006, 549421, 549835, 550248, 550660, 551045, 551456, 551867, 552277, 552659, 553068, 553477, 553857, 554264, 554671, 555050, 555455, 555860, 556237, 556641, 557018, 557420, 557795, 558197, 558571, 558971, 559344, 559717, 560116, 560488, 560859, 561256, 561626, 561996, 562365, 562759, 563128, 563495, 563863, 564229, 564595, 564987, 565353, 565717, 566082, 566445, 566809, 567172, 567534, 567870, 568232, 568593, 568954, 569314, 569673, 570007, 570366, 570724, 571082, 571414, 571771, 572128, 572459, 572815, 573145, 573499, 573854, 574183, 574511, 574864, 575192, 575544, 575871, 576198, 576549, 576875, 577200, 577525, 577875, 578199, 578523, 578846, 579169, 579492, 579815, 580137, 580459, 580780, 581101, 581421, 581742, 582062, 582357, 582676, 582995, 583313, 583607, 583925, 584243, 584535, 584852, 585144, 585461, 585752, 586068, 586359, 586674, 586964, 587254, 587568, 587858, 588147, 588436, 588749, 589037, 589325, 589613, 589900, 590188, 590474, 590761, 591048, 591334, 591620, 591905, 592167, 592452, 592737, 593021, 593282, 593565, 593826, 594109, 594369, 594652, 594911, 595193, 595452, 595734, 595992, 596250, 596531, 596788, 597046, 597303, 597559, 597816, 598072, 598329, 598608, 598840, 599096, 599351, 599606, 599861, 600116, 600347, 600601, 600855, 601086, 601340, 601593, 601823, 602076, 602306, 602536, 602788, 603017, 603246, 603475, 603727, 603955, 604184, 604412, 604640, 604868, 605095, 605323, 605550, 605778, 606004, 606231, 606435, 606662, 606888, 607092, 607318, 607544, 607747, 607972, 608175, 608400, 608603, 608805, 609030, 609232, 609434, 609636, 609838, 610039, 610263, 610442, 610666, 610844, 611045, 611246, 611447, 611647, 611848, 612026, 612226, 612404, 612604, 612781, 612981, 613158, 613358, 613535, 613712, 613911, 614088, 614265, 614441, 614618, 614794, 614993, 615147, 615323, 615499, 615675, 615851, 616026, 616180, 616356, 616531, 616685, 616860, 617013, 617188, 617341, 617516, 617669, 617822, 617975, 618149, 618302, 618454, 618607, 618759, 618912, 619064, 619216, 619368, 619498, 619650, 619802, 619954, 620084, 620236, 620366, 620517, 620647, 620798, 620928, 621058, 621187, 621339, 621468, 621597, 621727, 621856, 621985, 622115, 622244, 622373, 622502, 622610, 622738, 622867, 622975, 623104, 623211, 623340, 623447, 623575, 623683, 623790, 623918, 624025, 624132, 624239, 624346, 624453, 624560, 624666, 624773, 624880, 624987, 625072, 625179, 625285, 625370, 625477, 625562, 625668, 625754, 625860, 625945, 626030, 626115, 626222, 626307, 626392, 626476, 626561, 626646, 626731, 626795, 626880, 626965, 627049, 627113, 627198, 627261, 627346, 627409, 627494, 627558, 627621, 627706, 627769, 627832, 627896, 627959, 628023, 628086, 628149, 628213, 628276, 628339, 628382, 628445, 628508, 628550, 628614, 628656, 628719, 628761, 628803, 628867, 628909, 628951, 628993, 629035, 629077, 629119, 629162, 629204, 629246, 629288, 629330, 629351, 629393, 629414, 629456, 629498, 629519, 629540, 629582, 629603, 629624, 629666, 629687, 629708, 629729, 629750, 629771, 629792, 629814, 629814, 629834, 629856, 629876, 629876, 629897, 629897, 629919, 629919, 629940, 629940, 629940, 629940, 629961, 629961, 629961, 629961, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000, 630000)
+    
+
+    {---PANELS---}
+
+    declare ui_panel $main
+    declare $main_Id := get_ui_id($main)
+
+    declare ui_panel $reverb
+    declare $reverb_Id := get_ui_id($reverb)
+    hide_part($reverb, $HIDE_WHOLE_CONTROL)
+
+    declare ui_panel $effects
+    declare $effects_Id := get_ui_id($effects)
+    hide_part($effects, $HIDE_WHOLE_CONTROL)
+
+
+    {----- SLIDER -----}
+
+    {Mid Mic - SLIDER}
+    declare ui_slider $Middle (1, 630000)
+    set_control_help($Middle, "Set volume of middle mic.")
+    make_persistent($Middle)
+    declare $Mid_Id
+    $Mid_Id := get_ui_id($Middle)
+    set_control_par($Mid_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Mid_Id, $CONTROL_PAR_DEFAULT_VALUE, 630000)
+    set_control_par_str($Mid_Id, $CONTROL_PAR_PICTURE, "Volume")
+
+    {Side Mic - SLIDER}
+    declare ui_slider $Side (1, 630000)
+    set_control_help($Side, "Set volume of side mic.")
+    make_persistent($Side)
+    declare $Side_Id
+    $Side_Id := get_ui_id($Side)
+    set_control_par($Side_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Side_Id, $CONTROL_PAR_DEFAULT_VALUE, 630000)
+    set_control_par_str($Side_Id, $CONTROL_PAR_PICTURE, "Volume")
+
+    {Stereo Mic - SLIDER}
+    declare ui_slider $Stereo (1, 630000)
+    set_control_help($Stereo, "Set volume of stereo mics.")
+    make_persistent($Stereo)
+    declare $Stereo_Id
+    $Stereo_Id := get_ui_id($Stereo)
+    set_control_par($Stereo_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Stereo_Id, $CONTROL_PAR_DEFAULT_VALUE, 1)
+    set_control_par_str($Stereo_Id, $CONTROL_PAR_PICTURE, "Volume")
+
+    {---MAIN PANEL KNOBS---}
+
+    {Body - SLIDER}
+    declare ui_slider $Body (1, 1000000)
+    set_control_help($Body, "Adjusts tone of instrument.")
+    make_persistent($Body)
+    declare $Body_Id
+    $Body_Id := get_ui_id($Body)
+    set_control_par($Body_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Body_Id, $CONTROL_PAR_DEFAULT_VALUE, 500000)
+    set_control_par_str($Body_Id, $CONTROL_PAR_PICTURE, "Knob 1")
+    set_control_par($Body_Id, $CONTROL_PAR_PARENT_PANEL, $main_Id)
+
+    {Grain - SLIDER}
+    declare ui_slider $Grain (500000, 1000000)
+    set_control_help($Grain, "Set saturation level.")
+    make_persistent($Grain)
+    declare $Grain_Id
+    $Grain_Id := get_ui_id($Grain)
+    set_control_par($Grain_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Grain_Id, $CONTROL_PAR_DEFAULT_VALUE, 500000)
+    set_control_par_str($Grain_Id, $CONTROL_PAR_PICTURE, "Knob 2")
+    set_control_par($Grain_Id, $CONTROL_PAR_PARENT_PANEL, $main_Id)
+
+    {Drift - SLIDER}
+    declare ui_slider $Drift (1, 1000000)
+    set_control_help($Drift, "Set amount of wow and flutter.")
+    make_persistent($Drift)
+    declare $Drift_Id
+    $Drift_Id := get_ui_id($Drift)
+    set_control_par($Drift_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Drift_Id, $CONTROL_PAR_DEFAULT_VALUE, 1)
+    set_control_par_str($Drift_Id, $CONTROL_PAR_PICTURE, "Knob 3")
+    set_control_par($Drift_Id, $CONTROL_PAR_PARENT_PANEL, $main_Id)
+
+    {Pressure - SLIDER}
+    declare ui_slider $Pressure (1, 1000000)
+    set_control_help($Pressure, "Adjusts velocity sensitivity.")
+    make_persistent($Pressure)
+    declare $Pressure_Id
+    $Pressure_Id := get_ui_id($Pressure)
+    set_control_par($Pressure_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Pressure_Id, $CONTROL_PAR_DEFAULT_VALUE, 700000)
+    set_control_par_str($Pressure_Id, $CONTROL_PAR_PICTURE, "Knob 4")
+    set_control_par($Pressure_Id, $CONTROL_PAR_PARENT_PANEL, $main_Id)
+
+    {Air - SLIDER}
+    declare ui_slider $Air (1, 630000)
+    set_control_help($Air, "Sets reverb return level.")
+    make_persistent($Air)
+    declare $Air_Id
+    $Air_Id := get_ui_id($Air)
+    set_control_par($Air_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($Air_Id, $CONTROL_PAR_DEFAULT_VALUE, 400000)
+    set_control_par_str($Air_Id, $CONTROL_PAR_PICTURE, "Knob 5")
+    set_control_par($Air_Id, $CONTROL_PAR_PARENT_PANEL, $main_Id)
+
+    {---WOW & FLUTTER PANEL KNOBS---}
+
+    {Wow - SLIDER}
+    declare ui_slider $wow (1, 1000000)
+    set_control_help($wow, "Adjusts depth of wow effect.")
+    make_persistent($wow)
+    declare $wow_Id
+    $wow_Id := get_ui_id($wow)
+    set_control_par($wow_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($wow_Id, $CONTROL_PAR_DEFAULT_VALUE, 156000)
+    set_control_par_str($wow_Id, $CONTROL_PAR_PICTURE, "Knob 3")
+    set_control_par($wow_Id, $CONTROL_PAR_PARENT_PANEL, $effects_Id)
+
+    {Flutter- SLIDER}
+    declare ui_slider $flutter(1, 1000000)
+    set_control_help($flutter, "Adjusts depth of flutter effect.")
+    make_persistent($flutter)
+    declare $flutter_Id
+    $flutter_Id := get_ui_id($flutter)
+    set_control_par($flutter_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($flutter_Id, $CONTROL_PAR_DEFAULT_VALUE, 190000)
+    set_control_par_str($flutter_Id, $CONTROL_PAR_PICTURE, "Knob 3")
+    set_control_par($flutter_Id, $CONTROL_PAR_PARENT_PANEL, $effects_Id)
+
+    {Speed - SLIDER}
+    declare ui_slider $speed(1, 1000000)
+    set_control_help($speed, "Adjusts tape speed.")
+    make_persistent($speed)
+    declare $speed_Id
+    $speed_Id := get_ui_id($speed)
+    set_control_par($speed_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($speed_Id, $CONTROL_PAR_DEFAULT_VALUE, 220000)
+    set_control_par_str($speed_Id, $CONTROL_PAR_PICTURE, "Knob 3")
+    set_control_par($speed_Id, $CONTROL_PAR_PARENT_PANEL, $effects_Id)
+
+    {Age - SLIDER}
+    declare ui_slider $age(1, 1000000)
+    set_control_help($age, "Adjusts tape age and frequency response.")
+    make_persistent($age)
+    declare $age_Id
+    $age_Id := get_ui_id($age)
+    set_control_par($age_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($age_Id, $CONTROL_PAR_DEFAULT_VALUE, 509000)
+    set_control_par_str($age_Id, $CONTROL_PAR_PICTURE, "Knob 3")
+    set_control_par($age_Id, $CONTROL_PAR_PARENT_PANEL, $effects_Id)
+
+    {Stereo width - SLIDER}
+    declare ui_slider $width(1, 1000000)
+    set_control_help($width, "Adjusts width of wow & flutter effect.")
+    make_persistent($width)
+    declare $width_Id
+    $width_Id := get_ui_id($width)
+    set_control_par($width_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($width_Id, $CONTROL_PAR_DEFAULT_VALUE, 686000)
+    set_control_par_str($width_Id, $CONTROL_PAR_PICTURE, "Knob 3")
+    set_control_par($width_Id, $CONTROL_PAR_PARENT_PANEL, $effects_Id)
+
+
+    {---IR REVERB---}
+
+    declare !IRlist[13]
+    !IRlist[ 0] := ""
+    !IRlist[ 1] := "Classroom (Ambience)"
+    !IRlist[ 2] := "Kitchen (Ambience)"
+    !IRlist[ 3] := "Under The Stairs (Ambience)"
+    !IRlist[ 4] := "Garage (Room)"
+    !IRlist[ 5] := "Gymnasium (Room)"
+    !IRlist[ 6] := "Meeting Room (Room)"
+    !IRlist[ 7] := "Museum Lobby (Room)"
+    !IRlist[ 8] := "Atrium (Hall)"
+    !IRlist[ 9] := "In The Cloudsc(Hall)"
+    !IRlist[ 10] := "Temple Auditorium (Hall)"
+    !IRlist[ 11] := "Temple Beema (Hall)"
+    !IRlist[ 12] := "Stairwell (FX)"
+
+    declare ui_menu $IR
+    declare $ir_ID := get_ui_id($IR)
+    set_control_par(get_ui_id($IR), $CONTROL_PAR_WIDTH, 150)
+    add_menu_item($IR,"BYPASS",-1)
+    add_menu_item($IR,"Classroom (Ambience)",1)
+    add_menu_item($IR,"Kitchen (Ambience)",2)
+    add_menu_item($IR,"Under The Stairs (Ambience)",3)
+    add_menu_item($IR,"Garage (Room)",4)
+    add_menu_item($IR,"Gymnasium (Room)",5)
+    add_menu_item($IR,"Meeting Room (Room)",6)
+    add_menu_item($IR,"Museum Lobby (Room)",7)
+    add_menu_item($IR,"Atrium (Hall)",8)
+    add_menu_item($IR,"In The Clouds (Hall)",9)
+    add_menu_item($IR,"Temple Auditorium (Hall)",10)
+    add_menu_item($IR,"Temple Beema (Hall)",11)
+    add_menu_item($IR,"Stairwell (FX)",12)
+    make_persistent ($IR)
+    set_control_par($ir_ID, $CONTROL_PAR_PARENT_PANEL, $reverb_Id)
+
+    {Predelay - SLIDER}
+    declare ui_slider $predelay (1, 1000000)
+    set_control_help($predelay, "Adjusts delay before reverb onset.")
+    make_persistent($predelay)
+    declare $predelay_Id
+    $predelay_Id := get_ui_id($predelay)
+    set_control_par($predelay_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($predelay_Id, $CONTROL_PAR_DEFAULT_VALUE, 1)
+    set_control_par_str($predelay_Id, $CONTROL_PAR_PICTURE, "Knob 5")
+    set_control_par($predelay_Id, $CONTROL_PAR_PARENT_PANEL, $reverb_Id)
+
+    {Decay - SLIDER}
+    declare ui_slider $decay(1, 1000000)
+    set_control_help($decay, "Adjusts decay time of reverb.")
+    make_persistent($decay)
+    declare $decay_Id
+    $decay_Id := get_ui_id($decay)
+    set_control_par($decay_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($decay_Id, $CONTROL_PAR_DEFAULT_VALUE, 500000)
+    set_control_par_str($decay_Id, $CONTROL_PAR_PICTURE, "Knob 5")
+    set_control_par($decay_Id, $CONTROL_PAR_PARENT_PANEL, $reverb_Id)
+
+    {HPF - SLIDER}
+    declare ui_slider $hpf(1, 1000000)
+    set_control_help($hpf, "Adjusts high pass filter cutoff of reverb.")
+    make_persistent($hpf)
+    declare $hpf_Id
+    $hpf_Id := get_ui_id($hpf)
+    set_control_par($hpf_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($hpf_Id, $CONTROL_PAR_DEFAULT_VALUE, 1)
+    set_control_par_str($hpf_Id, $CONTROL_PAR_PICTURE, "Knob 5")
+    set_control_par($hpf_Id, $CONTROL_PAR_PARENT_PANEL, $reverb_Id)
+
+    {LPF - SLIDER}
+    declare ui_slider $lpf(1, 1000000)
+    set_control_help($lpf, "Adjusts low pass filter cutoff of reverb.")
+    make_persistent($lpf)
+    declare $lpf_Id
+    $lpf_Id := get_ui_id($lpf)
+    set_control_par($lpf_Id,$CONTROL_PAR_MOUSE_BEHAVIOUR,-500)
+    set_control_par($lpf_Id, $CONTROL_PAR_DEFAULT_VALUE, 1000000)
+    set_control_par_str($lpf_Id, $CONTROL_PAR_PICTURE, "Knob 3")
+    set_control_par($lpf_Id, $CONTROL_PAR_PARENT_PANEL, $reverb_Id)
+
+    {Reverse  - BUTTON}
+    declare ui_button $reverse
+    $reverse := 0
+    set_control_help($reverse, "Reverses reverb.")
+    make_persistent($reverse)
+    declare $reverse_Id
+    $reverse_Id := get_ui_id($reverse)
+    set_control_par_str($reverse_Id, $CONTROL_PAR_TEXT, "")
+    set_control_par($reverse_Id, $CONTROL_PAR_DEFAULT_VALUE, 0)
+    set_control_par_str($reverse_Id, $CONTROL_PAR_PICTURE, "reverse_btn")
+    set_control_par($reverse_Id, $CONTROL_PAR_PARENT_PANEL, $reverb_Id)
+
+
+    {---BUTTONS---}
+
+    declare ui_button $reverb_Button
+    $reverb_Button := 0
+    make_persistent($reverb_Button)
+    declare $Reverb_Button_Id
+    $Reverb_Button_Id := get_ui_id($reverb_Button)
+    set_control_par_str($Reverb_Button_Id, $CONTROL_PAR_PICTURE, "Settings_btn")
+    set_control_par_str($Reverb_Button_Id, $CONTROL_PAR_TEXT, "")
+    set_control_par($Reverb_Button_Id, $CONTROL_PAR_DEFAULT_VALUE, 0)
+    set_control_par($Reverb_Button_Id, $CONTROL_PAR_PARENT_PANEL, $main_Id)
+
+    declare ui_button $fx_Button
+    $fx_Button := 0
+    make_persistent($fx_Button)
+    declare $fx_Button_Id
+    $fx_Button_Id := get_ui_id($fx_Button)
+    set_control_par_str($fx_Button_Id, $CONTROL_PAR_PICTURE, "Settings_btn")
+    set_control_par_str($fx_Button_Id, $CONTROL_PAR_TEXT, "")
+    set_control_par($fx_Button_Id, $CONTROL_PAR_DEFAULT_VALUE, 0)
+    set_control_par($fx_Button_Id, $CONTROL_PAR_PARENT_PANEL, $main_Id)
+
+    declare ui_button $close_Button
+    $close_Button := 1
+    make_persistent($close_Button)
+    declare $close_Button_Id
+    $close_Button_Id := get_ui_id($close_Button)
+    set_control_par_str($close_Button_Id, $CONTROL_PAR_PICTURE, "close_btn")
+    set_control_par_str($close_Button_Id, $CONTROL_PAR_TEXT, "")
+    set_control_par($close_Button_Id, $CONTROL_PAR_DEFAULT_VALUE, 1)
+    set_control_par($close_Button_Id, $CONTROL_PAR_PARENT_PANEL, $effects_Id)
+    
+
+    declare ui_button $close_Button2
+    $close_Button2 := 1
+    make_persistent($close_Button2)
+    declare $close_Button2_Id
+    $close_Button2_Id := get_ui_id($close_Button2)
+    set_control_par_str($close_Button2_Id, $CONTROL_PAR_PICTURE, "close_btn")
+    set_control_par_str($close_Button2_Id, $CONTROL_PAR_TEXT, "")
+    set_control_par($close_Button2_Id, $CONTROL_PAR_DEFAULT_VALUE, 1)
+    set_control_par($close_Button2_Id, $CONTROL_PAR_PARENT_PANEL, $reverb_Id)
+
+    {---IR REVERB LOADOUT---}
+
+
+
+    {----- LAYOUT -----}
+
+    move_control_px($Middle, 300, 375)
+    move_control_px($Side, 400, 375)
+    move_control_px($Stereo, 500, 375)
+
+    move_control_px($Body, 105, 130)
+    move_control_px($Grain, 236, 130)
+    move_control_px($Drift, 367, 130)
+    move_control_px($Pressure, 498, 130)
+    move_control_px($Air, 629, 130)
+
+    move_control_px($wow, 105, 130)
+    move_control_px($flutter, 236, 130)
+    move_control_px($speed, 367, 130)
+    move_control_px($age, 498, 130)
+    move_control_px($width, 629, 130)
+
+    move_control_px($IR, 595, 140)
+    move_control_px($predelay, 105, 130)
+    move_control_px($decay, 236, 130)
+    move_control_px($hpf, 367, 130)
+    move_control_px($lpf, 498, 130)
+    move_control_px($reverse, 645, 174)
+
+    move_control_px($reverb_Button, 640, 209)
+    move_control_px($fx_Button, 381, 209)
+    move_control_px($close_Button, 58, 115)
+    move_control_px($close_Button2, 58, 115)
+
+end on
+
+
+on note
+
+
+{if ($note_counter = 0)
+    $ani_frame := 0
+end if}
+
+inc($note_counter)
+
+    if ($is_ani_active = 0)
+
+    $is_ani_active := 1
+    $ani_frame := 0
+
+    while ($note_counter > 0)
+            if ($ani_frame < 54)
+                set_control_par($lbl_ani_id, $CONTROL_PAR_PICTURE_STATE, $ani_frame)
+                wait($frame_rate)
+                inc($ani_frame)
+                else
+                $ani_frame := (($loop_start + 1) mod 237) + 54
+                set_control_par($lbl_ani_id, $CONTROL_PAR_PICTURE_STATE, $ani_frame)
+                wait($frame_rate)
+                inc($loop_start)
+            end if
+        
+    end while
+
+    $is_ani_active := 0
+
+    end if
+
+end on
+
+on release
+    wait(200000)
+    dec($note_counter)
+    if ($note_counter = 0)
+        $loop_start := 0
+        $ani_frame := 300
+        while ($ani_frame <= $MAX_FRAMES)
+            $is_ani_active := 1
+            inc($ani_frame)
+            wait($frame_rate/3)
+            set_control_par($lbl_ani_id, $CONTROL_PAR_PICTURE_STATE, $ani_frame)
+        end while
+        $is_ani_active := 0
+    end if
+end on
+
+
+{---- CONTROL ----}
+
+{Main Settings Button - CONTROL}
+on ui_control($Reverb_Button)
+    if($Reverb_Button=1)
+        set_skin_offset(1200)
+        $close_Button2 := 0
+        hide_part($reverb, $HIDE_PART_NOTHING)
+        hide_part($main, $HIDE_WHOLE_CONTROL)
+    end if
+end on
+
+on ui_control($fx_Button)
+    if($fx_Button=1)
+        set_skin_offset(600)
+        $close_Button := 0
+        hide_part($effects, $HIDE_PART_NOTHING)
+        hide_part($main, $HIDE_WHOLE_CONTROL)
+    end if
+end on
+
+on ui_control($close_Button)
+    if($close_Button=1)
+        set_skin_offset(0)
+        $fx_Button := 0
+        hide_part($main, $HIDE_PART_NOTHING)
+        hide_part($effects, $HIDE_WHOLE_CONTROL)
+    end if
+end on
+
+on ui_control($close_Button2)
+    if($close_Button2=1)
+        set_skin_offset(0)
+        $Reverb_Button := 0
+        hide_part($main, $HIDE_PART_NOTHING)
+        hide_part($reverb, $HIDE_WHOLE_CONTROL)
+    end if
+end on
+
+on ui_control($Middle)
+    set_engine_par($ENGINE_PAR_VOLUME, $Middle, -1, -1, $NI_BUS_OFFSET + 0)
+end on
+
+on ui_control($Side)
+    set_engine_par($ENGINE_PAR_VOLUME, $Side, -1, -1, $NI_BUS_OFFSET + 1)
+end on
+
+on ui_control($Stereo)
+    set_engine_par($ENGINE_PAR_VOLUME, $Stereo, -1, -1, $NI_BUS_OFFSET + 2)
+end on
+
+on ui_control($Body)
+    if($Body >= 500000)
+    set_engine_par($ENGINE_PAR_CUTOFF, $Body - 500000, -1, 2, -1)
+    set_engine_par($ENGINE_PAR_CUTOFF, 1000000, -1, 3, -1)
+    else
+    set_engine_par($ENGINE_PAR_CUTOFF, $Body + 400000, -1, 3, -1)
+    set_engine_par($ENGINE_PAR_CUTOFF, 0, -1, 2, -1)
+end if 
+
+end on
+
+on ui_control($Grain)
+    set_engine_par($ENGINE_PAR_SHAPE, $Grain, -1, 4, -1)
+end on
+
+on ui_control($Drift)
+    set_engine_par($ENGINE_PAR_WOWFLUTTER_MIX, $Drift, -1, 5, -1)
+end on
+
+on ui_control($Pressure)
+    $i := 0
+    while($i < 12)
+        set_engine_par($ENGINE_PAR_MOD_TARGET_INTENSITY, $Pressure, $i, 16, -1)
+        inc($i)
+    end while
+end on
+
+on ui_control($Air)
+    set_engine_par($ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, $Air, -1, 0, $NI_SEND_BUS)
+end on
+
+on ui_control($wow)
+    set_engine_par($ENGINE_PAR_WOWFLUTTER_WOW, $wow, -1, 5, -1)
+end on
+
+on ui_control($flutter)
+    set_engine_par($ENGINE_PAR_WOWFLUTTER_FLUTTER, $flutter, -1, 5, -1)
+end on
+
+on ui_control($speed)
+    set_engine_par($ENGINE_PAR_WOWFLUTTER_SPEED, $speed, -1, 5, -1)
+end on
+
+on ui_control($age)
+    set_engine_par($ENGINE_PAR_WOWFLUTTER_AGE, $age, -1, 5, -1)
+end on
+
+on ui_control($width)
+    set_engine_par($ENGINE_PAR_WOWFLUTTER_STEREO, $width, -1, 5, -1)
+end on
+
+on ui_control($predelay)
+    set_engine_par($ENGINE_PAR_IRC_PREDELAY, $predelay, -1, 0, $NI_SEND_BUS)
+end on
+
+on ui_control($decay)
+    set_engine_par($ENGINE_PAR_IRC_LENGTH_RATIO_ER, $decay, -1, 0, $NI_SEND_BUS)
+    set_engine_par($ENGINE_PAR_IRC_LENGTH_RATIO_LR, $decay, -1, 0, $NI_SEND_BUS)
+end on
+
+on ui_control($hpf)
+    set_engine_par($ENGINE_PAR_IRC_FREQ_HIGHPASS_ER, $hpf, -1, 0, $NI_SEND_BUS)
+    set_engine_par($ENGINE_PAR_IRC_FREQ_HIGHPASS_LR, $hpf, -1, 0, $NI_SEND_BUS)
+end on
+
+on ui_control($lpf)
+    set_engine_par($ENGINE_PAR_IRC_FREQ_LOWPASS_ER, $lpf, -1, 0, $NI_SEND_BUS)
+    set_engine_par($ENGINE_PAR_IRC_FREQ_LOWPASS_LR, $lpf, -1, 0, $NI_SEND_BUS)
+end on
+
+on ui_control($reverse)
+    set_engine_par($ENGINE_PAR_IRC_REVERSE, $reverse, -1, 0, $NI_SEND_BUS)
+end on
+
+on ui_control($IR)
+    if ($IR = -1)
+        set_engine_par($ENGINE_PAR_SEND_EFFECT_BYPASS,1,-1,0,$NI_SEND_BUS)
+    else
+        set_engine_par($ENGINE_PAR_SEND_EFFECT_BYPASS,0,-1,0,$NI_SEND_BUS)
+        load_ir_sample(!IRlist[$IR],0,$NI_SEND_BUS)
+    end if
+end on
+
+on controller
+    if ($CC_NUM = 1)
+        $crossfade := (%CC[1] * 8)
+        $m := 0
+        while ($m < 6)
+            set_engine_par($ENGINE_PAR_VOLUME, %vol_ep[(1016 - $crossfade)], $m, -1, -1)
+            inc($m)
+        end while
+
+        
+        set_engine_par($ENGINE_PAR_VOLUME, %vol_ep[$crossfade], 6, -1, -1)
+        set_engine_par($ENGINE_PAR_VOLUME, %vol_ep[$crossfade], 7, -1, -1)
+        set_engine_par($ENGINE_PAR_VOLUME, %vol_ep[$crossfade], 8, -1, -1)
+      
+
+    end if
+end on
